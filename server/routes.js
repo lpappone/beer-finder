@@ -3,8 +3,8 @@ var passport = require('./config/middleware.js');
 
 module.exports = function(app) {
 
-  app.use(passport.initialize());
-  app.use(passport.session());
+  // app.use(passport.initialize());
+  // app.use(passport.session());
 
   // Define which routers are assigned to each route.
   app.get('/', function (req, res) {
@@ -23,18 +23,48 @@ module.exports = function(app) {
     res.send(testResponse);
   });
 
-  app.post('/signup', function(req, res) {
-    var params = {username: req.body.signup_username, password: req.body.signup_password};
-    db.query('CREATE (n:User {username: ({username}), password: ({password}) })', params, function(err) {
-      if (err) {console.log('error: ', err)}
+  // app.post('/signup', function(req, res) {
+  //   var params = {username: req.body.signup_username, password: req.body.signup_password};
+  //   db.query('CREATE (n:User {username: ({username}), password: ({password}) })', params, function(err) {
+  //     if (err) {console.log('error: ', err)}
 
-      res.redirect //not sure how to handle redirects with the storyboard thing
+  //     res.redirect //not sure how to handle redirects with the storyboard thing
+  //   })
+  // })
+
+  app.post('/signup', function(req, res) {
+    var params = {username: req.body.username, password: req.body.password};    
+    db.query('OPTIONAL MATCH (n:User {username: ({username})}) RETURN n', params, function(err, data) {
+      if (err) console.log('error: ', err);  //when n is null, res.send(data) sends [{"n": null}]
+      var data = data[0];
+      if (data.n !== null) {   
+        res.send({'success': 0, 'error_message': 'Sorry, that username is taken.'});
+      } else { 
+        db.query('CREATE (n:User {username: ({username}), password: ({password}) })', params, function(err) {
+          if (err) {console.log('error: ', err)}
+          res.send({'success': 1});
+        })
+      }
     })
   })
 
-  app.post('/login', 
-    passport.authenticate('local'), 
-    function(req, res) {
-    res.redirect(); //normally this would be homepage plus the username in the url... not sure here)
+  // app.post('/login', 
+  //   passport.authenticate('local'), 
+  //   function(req, res) {
+  //   res.redirect(); //normally this would be homepage plus the username in the url... not sure here)
+  // })
+
+  app.post('/login', function(req, res) {
+    var params = {username: req.body.username}
+    var password = req.body.password;
+    db.query('OPTIONAL MATCH (n:User {username: ({username})}) WHERE n.password = "'+password+'" RETURN n', params, function(err, data) {
+      if (err) console.log('error: ', err);
+      var data = data[0];
+      if (data.n === null) {
+        res.send({'success': 0, 'error_message': 'Incorrect username or password.'});
+      } else {
+        res.send({'success': 1});
+      }
+    })  
   })
 };
