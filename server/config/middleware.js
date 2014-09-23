@@ -5,6 +5,7 @@
 
 var neo4j = require('neo4j');
 var db = new neo4j.GraphDatabase('http://beeradvisor.cloudapp.net:7474/');
+
 // var LocalStrategy = require('passport-local').Strategy;
 
 // var passport = require('passport');
